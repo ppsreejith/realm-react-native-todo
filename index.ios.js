@@ -16,7 +16,7 @@ const Realm = require('realm');
 class TodoItem extends Component {
   shouldComponentUpdate(nProps) {
     try {
-      return this.props.todo.id != nProps.todo.id || this.props.todo.status != nProps.todo.status;
+      return this.props.todo.id != nProps.todo.id;
     } catch(e) {
       return true;
     }
