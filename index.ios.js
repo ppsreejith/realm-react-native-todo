@@ -23,6 +23,7 @@ class TodoItem extends Component {
   }
   
   render() {
+    console.log("Rerendered :(");
     const {todo} = this.props;
     
     return (
@@ -45,7 +46,7 @@ const onPressComplete = (item) => {
           realm.write(()=> {
             var all = realm.objects('Todo');
             let filterTodo = all.filtered(`id = ${item.id}`);
-            realm.delete(filterTodo);
+            realm.delete(filterTodo[0]);
           })
         },
         {text: 'Cancel', onPress: (text) => console.log('Cancel')}
@@ -76,7 +77,7 @@ class realmTodo extends Component {
   }
           
   fetchData(itemsRef) {
-      var todoList = realm.objects('Todo').sorted('id', true);
+      var todoList = realm.objects('Todo').sorted('id', false);
       
         this.setState({
             dataSource: this.state.dataSource.cloneWithRows(todoList),
