@@ -1,7 +1,6 @@
 'use strict';
-import React, {
+import {
   AppRegistry,
-  Component,
   StyleSheet,
   Text,
   View,
@@ -9,21 +8,25 @@ import React, {
   AlertIOS
 } from 'react-native';
 
+import React, { Component } from 'react';
 import { ListView } from 'realm/react-native';
-import InvertibleScrollView from 'react-native-invertible-scroll-view';
+//import InvertibleScrollView from 'react-native-invertible-scroll-view';
 const Realm = require('realm');
 
 class TodoItem extends Component {
   shouldComponentUpdate(nProps) {
-    return this.props.todo.id != nProps.todo.id;
+    try {
+      return this.props.todo.id != nProps.todo.id || this.props.todo.status != nProps.todo.status;
+    } catch(e) {
+      return true;
+    }
   }
   
   render() {
     const {todo} = this.props;
-    console.log("Rerendered Item is", todo.id);
     
     return (
-      <TouchableHighlight key={todo.id} underlayColor="rgba(181, 206, 155, 0.79)" onPress={onPressComplete(todo)}>
+      <TouchableHighlight key={todo.id} underlayColor="rgba(181, 206, 155, 0.79)" onPress={onPressComplete(todo)} style={styles.invertedItem}>
         <View style={styles.listItem}>
           <Text style={styles.listText}>{todo.text}</Text>
         </View>
@@ -54,7 +57,7 @@ const onPressComplete = (item) => {
 
 // schema
 const TodoListSchema = { 
-    name: 'Todo', primaryKey: 'id', properties:{id: 'int', text: 'string'}
+    name: 'Todo', primaryKey: 'id', properties:{id: 'int', text: 'string', status: 'string'}
 };
 
 // new realm object
@@ -73,7 +76,7 @@ class realmTodo extends Component {
   }
           
   fetchData(itemsRef) {
-      var todoList = realm.objects('Todo');
+      var todoList = realm.objects('Todo').sorted('id', true);
       
         this.setState({
             dataSource: this.state.dataSource.cloneWithRows(todoList),
@@ -95,13 +98,13 @@ class realmTodo extends Component {
   }
    
   render() {
+    // renderScrollComponent={props => <InvertibleScrollView {...props} inverted />}
     return (
         <View style={styles.container}>
            <ListView 
                 dataSource={this.state.dataSource}
-                renderScrollComponent={props => <InvertibleScrollView {...props} inverted />}
                 renderRow={this.renderTodo}
-                style={styles.listView}
+                style={[styles.invertedItem, styles.listView]}
             />
         
             <View style={styles.button}>
@@ -124,7 +127,7 @@ class realmTodo extends Component {
           text: 'Add',
           onPress: (text) => {
             realm.write(()=> {
-            realm.create('Todo', [Date.now(), text]);
+            realm.create('Todo', [Date.now(), text, 'active']);
             });           
           }
         },
@@ -145,6 +148,9 @@ class realmTodo extends Component {
 }
 
 const styles = StyleSheet.create({
+  invertedItem: {
+    transform: [{ rotate: '180deg'}]
+  },
   container: {
     flex: 1,
     backgroundColor: '#F5FCFF'
@@ -182,4 +188,4 @@ const styles = StyleSheet.create({
     }
 });
 
-AppRegistry.registerComponent('realmTodo', () => realmTodo);
+AppRegistry.registerComponent('realm_react_native_todo', () => realmTodo);
