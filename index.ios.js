@@ -13,18 +13,30 @@ import { ListView } from 'realm/react-native';
 //import InvertibleScrollView from 'react-native-invertible-scroll-view';
 const Realm = require('realm');
 
-class TodoItem extends Component {
-  shouldComponentUpdate(nProps) {
-    try {
-      return this.props.todo.id != nProps.todo.id;
-    } catch(e) {
-      return true;
-    }
+const ITEM_STATUS = {
+  DELETED: 0,
+  ACTIVE: 1,
+};
+
+const _itemStatus = {};
+
+const has_changed = (r1, r2) => {
+  try {
+    return r1.id != r2.id || _itemStatus[r1.id] != r2.status;
+  } catch(e) {
+    return true;
   }
+}
+
+class TodoItem extends Component {
   
   render() {
-    console.log("Rerendered :(");
+//    console.log("Rerendered :(");
     const {todo} = this.props;
+    _itemStatus[todo.id] = todo.status;
+    
+    if (todo.status == ITEM_STATUS.DELETED)
+      return null;
     
     return (
       <TouchableHighlight key={todo.id} underlayColor="rgba(181, 206, 155, 0.79)" onPress={onPressComplete(todo)} style={styles.invertedItem}>
@@ -46,7 +58,8 @@ const onPressComplete = (item) => {
           realm.write(()=> {
             var all = realm.objects('Todo');
             let filterTodo = all.filtered(`id = ${item.id}`);
-            realm.delete(filterTodo[0]);
+            filterTodo[0].status = ITEM_STATUS.DELETED;
+            //realm.delete(filterTodo[0]);
           })
         },
         {text: 'Cancel', onPress: (text) => console.log('Cancel')}
@@ -58,7 +71,7 @@ const onPressComplete = (item) => {
 
 // schema
 const TodoListSchema = { 
-    name: 'Todo', primaryKey: 'id', properties:{id: 'int', text: 'string', status: 'string'}
+    name: 'Todo', primaryKey: 'id', properties:{id: 'int', text: 'string', status: 'int'}
 };
 
 // new realm object
@@ -70,14 +83,14 @@ class realmTodo extends Component {
       super(props);
       this.state = {
           dataSource: new ListView.DataSource({
-            rowHasChanged: (row1, row2) => row1.id !== row2.id,
+            rowHasChanged: has_changed,
           })
       };
     this.renderTodo = this.renderTodo.bind(this);
   }
           
   fetchData(itemsRef) {
-      var todoList = realm.objects('Todo').sorted('id', false);
+      var todoList = realm.objects('Todo');
       
         this.setState({
             dataSource: this.state.dataSource.cloneWithRows(todoList),
@@ -128,7 +141,7 @@ class realmTodo extends Component {
           text: 'Add',
           onPress: (text) => {
             realm.write(()=> {
-            realm.create('Todo', [Date.now(), text, 'active']);
+            realm.create('Todo', [Date.now(), text, ITEM_STATUS.ACTIVE]);
             });           
           }
         },
